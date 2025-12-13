@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "960603308978",
+    "project_id": "vibz-c4aff",
+    "storage_bucket": "vibz-c4aff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960603308978:android:6234898e2a1667d0149aab",
+        "android_client_info": {
+          "package_name": "com.example.vibz"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "960603308978-su6osbid2ddruihi8ju6d04oru9b7b6m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vibz",
+            "certificate_hash": "5036718b2d2c4c98edfc0b962170ed43751f334f"
+          }
+        },
+        {
+          "client_id": "960603308978-58m80b567p9jhodnbd0qg0u43eo0tee3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtknvt3lvptGaAUJFqYifPMtP9WeLNa1w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "960603308978-58m80b567p9jhodnbd0qg0u43eo0tee3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "960603308978-mmap3fbi1r7l65rtjtk44eqv3ir9rool.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vibz"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
