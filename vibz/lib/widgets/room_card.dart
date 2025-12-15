@@ -9,13 +9,13 @@ class RoomCard extends StatelessWidget {
   final void Function() onJoin; // use VoidCallback here
 
   const RoomCard({
-    Key? key,
+    super.key,
     required this.roomId,
     required this.name,
     required this.createdBy,
     required this.isPublic,
     required this.onJoin,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -5,7 +5,7 @@ import '../../services/firestore_service.dart';
 
 class SearchScreen extends StatefulWidget {
   final String roomId;
-  const SearchScreen({Key? key, required this.roomId}) : super(key: key);
+  const SearchScreen({super.key, required this.roomId});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();

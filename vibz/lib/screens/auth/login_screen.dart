@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../services/auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../constants/colors.dart';
 import 'spotify_connect_screen.dart';
-
+import 'spotify_onboarding_screen.dart';
 class LoginScreen extends ConsumerWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   void _showSnackbar(BuildContext ctx, String msg) {
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(msg)));
@@ -38,11 +37,21 @@ class LoginScreen extends ConsumerWidget {
                 onPressed: () async {
                   try {
                     await authSvc.signInWithGoogle();
-                    _showSnackbar(context, 'Signed in with Google');
+                    if (!context.mounted) return;
+
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => const SpotifyOnboardingScreen(),
+                      ),
+                    );
                   } catch (e) {
-                    _showSnackbar(context, 'Google sign-in failed: $e');
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text('Google sign-in failed')));
                   }
                 },
+
+
               ),
               const SizedBox(height: 12),
               OutlinedButton(
@@ -55,16 +64,16 @@ class LoginScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SpotifyConnectScreen()));
-                },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  child: Text('Link Spotify (optional)'),
-                ),
-              ),
+              // ElevatedButton(
+              //   style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+              //   onPressed: () {
+              //     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SpotifyConnectScreen()));
+              //   },
+              //   child: const Padding(
+              //     padding: EdgeInsets.symmetric(vertical: 14),
+              //     child: Text('Link Spotify (optional)'),
+              //   ),
+              // ),
               const SizedBox(height: 20),
             ],
           ),

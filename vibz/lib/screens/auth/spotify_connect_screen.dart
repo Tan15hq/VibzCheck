@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/spotify_service.dart';
 
 class SpotifyConnectScreen extends StatefulWidget {
-  const SpotifyConnectScreen({Key? key}) : super(key: key);
+  const SpotifyConnectScreen({super.key});
 
   @override
   State<SpotifyConnectScreen> createState() => _SpotifyConnectScreenState();

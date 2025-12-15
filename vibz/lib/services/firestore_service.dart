@@ -1,12 +1,15 @@
-// firestore_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FirestoreService {
-    final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-    /// Add a playlist item to room (client-side metadata)
-    Future<void> addPlaylistItem({
+  // --------------------------------------------------
+  // PLAYLIST
+  // --------------------------------------------------
+
+  /// Add a playlist item to a room
+  Future<void> addPlaylistItem({
     required String roomId,
     required String trackId,
     required String title,
@@ -14,6 +17,7 @@ class FirestoreService {
     required int durationMs,
     String? previewUrl,
     String? artwork,
+    Map<String, dynamic>? mood,
   }) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
@@ -25,12 +29,18 @@ class FirestoreService {
         .collection('playlist')
         .doc(itemId);
 
-    final payload = {
+    await docRef.set({
       'itemId': itemId,
       'trackId': trackId,
       'addedBy': uid,
       'addedAt': FieldValue.serverTimestamp(),
       'status': 'queued',
+
+      // voting
+      'votes': {},        // map<uid, "up" | "down">
+      'voteScore': 0,     // computed by Cloud Function
+
+      // metadata
       'metadata': {
         'title': title,
         'artists': artists,
@@ -38,49 +48,65 @@ class FirestoreService {
         'preview_url': previewUrl,
         'artwork': artwork,
       },
-      'votes': {'up': 0, 'down': 0},
-    };
 
-    await docRef.set(payload);
-  }
-
-
-  /// Create or update a user's vote document: id = "{uid}_{itemId}"
-  Future<void> setVote({
-    required String roomId,
-    required String itemId,
-    required String vote, // 'up' or 'down' or 'none'
-  }) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final voteDocId = '${uid}_$itemId';
-    final voteRef = _db.collection('rooms').doc(roomId).collection('votes').doc(voteDocId);
-
-    if (vote == 'none') {
-      // delete vote
-      await voteRef.delete().catchError((_) {});
-      return;
-    }
-
-    await voteRef.set({
-      'userId': uid,
-      'itemId': itemId,
-      'vote': vote,
-      'createdAt': FieldValue.serverTimestamp(),
+      // optional mood data
+      if (mood != null) 'mood': mood,
     });
   }
 
+  /// Stream playlist items in deterministic order
   Stream<List<DocumentSnapshot>> playlistStream(String roomId) {
-    return _db.collection('rooms').doc(roomId).collection('playlist')
-      .orderBy('addedAt', descending: false)
-      .snapshots()
-      .map((snap) => snap.docs);
+    return _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('playlist')
+        .orderBy('voteScore', descending: true)
+        .orderBy('addedAt')
+        .snapshots()
+        .map((snap) => snap.docs);
   }
 
+  // --------------------------------------------------
+  // VOTING (TRANSACTION SAFE)
+  // --------------------------------------------------
+
+  /// Set or remove a user's vote for a playlist item
+  Future<void> setVote({
+    required String roomId,
+    required String itemId,
+    required String vote, // 'up' | 'down' | 'none'
+  }) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final ref = _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('playlist')
+        .doc(itemId);
+
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (!snap.exists) return;
+
+      final data = snap.data()!;
+      final votes = Map<String, dynamic>.from(data['votes'] ?? {});
+
+      if (vote == 'none') {
+        votes.remove(uid);
+      } else {
+        votes[uid] = vote;
+      }
+
+      tx.update(ref, {'votes': votes});
+    });
+  }
+
+  // --------------------------------------------------
+  // ROOM
+  // --------------------------------------------------
+
+  /// Stream room document
   Stream<DocumentSnapshot> roomDocStream(String roomId) {
     return _db.collection('rooms').doc(roomId).snapshots();
-  }
-
-  Stream<QuerySnapshot> votesForRoom(String roomId) {
-    return _db.collection('rooms').doc(roomId).collection('votes').snapshots();
   }
 }

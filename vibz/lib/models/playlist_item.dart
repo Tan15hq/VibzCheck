@@ -1,21 +1,26 @@
-// playlist_item.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PlaylistItem {
-  final String itemId;
+  final String id; // Firestore doc ID
   final String trackId;
+
+  // Spotify metadata
   final String title;
   final List<String> artists;
   final int durationMs;
   final String? previewUrl;
   final String? artwork;
+
+  // State
   final String addedBy;
-  final Timestamp addedAt;
-  final Map<String, dynamic> votes; // { 'up': int, 'down': int }
-  final String status;
+  final DateTime addedAt;
+  final Map<String, int> votes; // { uid: +1 | -1 }
+  final int voteScore;
+  final String status; // queued | playing | played
+  final Map<String, dynamic>? mood;
 
   PlaylistItem({
-    required this.itemId,
+    required this.id,
     required this.trackId,
     required this.title,
     required this.artists,
@@ -23,43 +28,59 @@ class PlaylistItem {
     required this.addedBy,
     required this.addedAt,
     required this.votes,
+    required this.voteScore,
     required this.status,
     this.previewUrl,
     this.artwork,
+    this.mood,
   });
 
-  factory PlaylistItem.fromDoc(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  /* ---------- FROM FIRESTORE ---------- */
+
+  factory PlaylistItem.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data()!;
+
+    final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
+    
     return PlaylistItem(
-      itemId: data['itemId'] ?? doc.id,
+      id: doc.id,
       trackId: data['trackId'] ?? '',
-      title: (data['metadata']?['title'] ?? '') as String,
-      artists: List<String>.from((data['metadata']?['artists'] ?? []) as List<dynamic>),
-      durationMs: (data['metadata']?['duration_ms'] ?? 0) as int,
-      previewUrl: data['metadata']?['preview_url'] as String?,
-      artwork: data['metadata']?['artwork'] as String?,
+      title: metadata['title'] ?? '',
+      artists: List<String>.from(metadata['artists'] ?? []),
+      durationMs: metadata['duration_ms'] ?? 0,
+      previewUrl: metadata['preview_url'],
+      artwork: metadata['artwork'],
       addedBy: data['addedBy'] ?? '',
-      addedAt: data['addedAt'] ?? Timestamp.now(),
-      votes: Map<String, dynamic>.from(data['votes'] ?? {'up': 0, 'down': 0}),
+      addedAt: (data['addedAt'] as Timestamp?)?.toDate() ??
+        DateTime.fromMillisecondsSinceEpoch(0),
+      votes: Map<String, int>.from(data['votes'] ?? {}),
+      voteScore: data['voteScore'] ?? 0,
       status: data['status'] ?? 'queued',
+      mood: data['mood'] as Map<String, dynamic>?,
     );
   }
 
+  /* ---------- TO FIRESTORE ---------- */
+
   Map<String, dynamic> toMap() {
     return {
-      'itemId': itemId,
       'trackId': trackId,
       'addedBy': addedBy,
-      'addedAt': addedAt,
+      'addedAt': Timestamp.fromDate(addedAt),
       'status': status,
+      'votes': votes,
+      'voteScore': voteScore,
       'metadata': {
         'title': title,
         'artists': artists,
         'duration_ms': durationMs,
         'preview_url': previewUrl,
         'artwork': artwork,
+        'mood': mood,
+
       },
-      'votes': votes,
     };
   }
 }
